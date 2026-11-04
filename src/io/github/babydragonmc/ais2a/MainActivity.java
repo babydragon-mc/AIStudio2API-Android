@@ -36,6 +36,11 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         ScrollView scroll = new ScrollView(this);
+        scroll.setOnApplyWindowInsetsListener((view,insets) -> {
+            view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),
+                    insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());
+            return insets;
+        });
         LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setPadding(dp(24),dp(32),dp(24),dp(24));
         scroll.addView(root); setContentView(scroll);
         text(root, "AIS2A Android", 28);
@@ -53,7 +58,7 @@ public final class MainActivity extends Activity {
         text(root, "出站代理（手机上的代理端口）", 17);
         proxy = new EditText(this); proxy.setSingleLine(true); proxy.setHint("http://127.0.0.1:7890"); proxy.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI); root.addView(proxy);
         try { proxy.setText(BackendService.setting(this, "PROXY")); } catch(IOException e) { error(e); }
-        text(root, "需要可访问 Google 的网络。当前 Linux 核心的 Android DNS 兼容性待验证，推荐显式填写手机上已有的 HTTP / SOCKS5 代理。保存后停止并重新启动核心。", 13);
+        text(root, "如无法连接 Google，请填写手机已有的 HTTP / SOCKS5 代理地址。保存后停止并重新启动核心。", 13);
         button(root, "保存代理设置", v -> { try { BackendService.proxy(this, proxy.getText().toString()); Toast.makeText(this,"已保存，重启核心后生效",Toast.LENGTH_LONG).show(); } catch(IOException e) { error(e); } });
         text(root, "OpenAI 兼容接口：http://127.0.0.1:18765/v1", 14);
         button(root, "复制本机 API 密钥", v -> copySecret("PROXY_API_KEY", "API 密钥"));
@@ -87,7 +92,7 @@ public final class MainActivity extends Activity {
             ScrollView container = new ScrollView(this); container.addView(view);
             new AlertDialog.Builder(this).setTitle("仅本机显示，请勿公开账号日志").setView(container).setPositiveButton("关闭",null).show();
         });
-        text(root, "社区实验移植版，基于 Mag1cFall/AIStudio2API v0.3.0（MIT）。账号与配置仅保存在本机私有目录；卸载会删除数据。", 12);
+        text(root, "社区实验移植版，基于 Mag1cFall/AIStudio2API v0.3.0。主体采用 MIT，依赖保留各自许可，声明随安装包提供。账号与配置保存在本机，卸载会删除数据。", 12);
     }
     @Override protected void onResume() { super.onResume(); handler.post(refresh); }
     @Override protected void onPause() { handler.removeCallbacks(refresh); super.onPause(); }
