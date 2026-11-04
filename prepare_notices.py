@@ -51,16 +51,22 @@ def main():
     (ROOT/'assets'/'DEPENDENCIES.json').write_text(json.dumps(inventory,indent=2),encoding='utf-8')
     # Mozilla's consolidated notices cover bundled C/C++/Rust dependencies in SpiderMonkey.
     firefox='https://raw.githubusercontent.com/Mag1cFall/firefox/v152.0.4-aistudio2api.1/'
-    (ROOT/'assets'/'Mozilla-license.html').write_bytes(fetch(firefox+'toolkit/content/license.html'))
-    for name in ('LICENSE','COPYING'):
-        try: (ROOT/'assets'/('musl-'+name)).write_bytes(fetch('https://git.musl-libc.org/cgit/musl/plain/'+name))
-        except urllib.error.HTTPError as e:
-            if e.code != 404: raise
+    for name,url in {
+        'Mozilla-license.html':firefox+'toolkit/content/license.html',
+        'musl-COPYRIGHT':'https://git.musl-libc.org/cgit/musl/plain/COPYRIGHT',
+        'Go-LICENSE':'https://raw.githubusercontent.com/golang/go/go1.27.0/LICENSE',
+    }.items():
+        dest=ROOT/'assets'/name
+        if not dest.exists() or dest.stat().st_size<100: dest.write_bytes(fetch(url))
     source_bundle=ROOT/'dist'/'AIS2A-Android-0.1.0-alpha-core-sources.zip'; source_bundle.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(source_bundle,'w',compression=zipfile.ZIP_DEFLATED) as out:
         out.write(upstream,'upstream-AIStudio2API-v0.3.0.zip')
-        for item in inventory: out.write(cache/item['archive'],'go-modules/'+item['archive'])
-        out.writestr('BUILDING.txt','Extract upstream source, restore Go module archives using proxy.golang.org layout, and follow upstream .github/workflows/build.yml build-linux for the selected architecture.\nSpiderMonkey exact source: https://github.com/Mag1cFall/firefox/tree/v152.0.4-aistudio2api.1\nSpiderMonkey build instructions: see that repository and upstream .github/actions/spidermonkey/action.yml.\nThe Android wrapper runs the unmodified core as a separate executable; rebuild the core then replace the packaged libais2acore.so via build.py.\n')
+        for item in inventory:
+            directory=notices/item['module']/item['version']
+            copyleft=any(any(marker in p.read_text(encoding='utf-8',errors='ignore') for marker in ('GNU LESSER GENERAL PUBLIC','GNU GENERAL PUBLIC','Mozilla Public License')) for p in directory.rglob('*') if p.is_file())
+            if copyleft: out.write(cache/item['archive'],'go-modules/'+item['archive'])
+        out.writestr('DEPENDENCIES.json',json.dumps(inventory,indent=2))
+        out.writestr('BUILDING.txt','Extract upstream source and follow upstream .github/workflows/build.yml build-linux for the selected architecture. go mod download retrieves the remaining permissively licensed dependency sources at the exact versions in go.mod, verified against go.sum. Exact LGPL dependency module source archives are additionally bundled in go-modules/.\nSpiderMonkey exact source: https://github.com/Mag1cFall/firefox/tree/v152.0.4-aistudio2api.1\nSpiderMonkey build instructions: see that repository and upstream .github/actions/spidermonkey/action.yml.\nThe Android wrapper runs the unmodified core as a separate executable; rebuild the core then replace the packaged libais2acore.so via build.py.\n')
     print('Verified dependency source archives:',len(inventory),flush=True)
     print('Source bundle:',source_bundle,flush=True)
 
