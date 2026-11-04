@@ -1,0 +1,5 @@
+go-browserforge ports concepts and behavior from BrowserForge:
+https://github.com/daijro/browserforge
+
+BrowserForge and the Apify fingerprint datapoints package are licensed under
+the Apache License 2.0.

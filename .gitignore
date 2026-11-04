@@ -1,0 +1,9 @@
+.local/
+dist/
+*.keystore
+*.jks
+.env
+auth/
+runtime/
+__pycache__/
+local.properties
